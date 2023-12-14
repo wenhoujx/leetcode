@@ -1,3 +1,5 @@
+import collection.mutable.ListBuffer
+
 // https://leetcode.com/problems/reverse-linked-list/
 // reverse-linked-list
 class ListNode(_x: Int = 0, _next: ListNode = null) {
@@ -44,6 +46,28 @@ def isPalindromeNumber(x: Int): Boolean = {
 
 println(f"isPalindromeNumber(121): ${isPalindromeNumber(121)}")
 println(f"isPalindromeNumber(-121): ${isPalindromeNumber(-121)}")
+
+// https://leetcode.com/problems/valid-palindrome-ii/
+// if a string is valid palindrome after removing 0 or 1 char from it
+def validPalindrome(s: String): Boolean = {
+  val isPalindrome: String => Boolean = s => s == s.reverse
+  s match {
+    case s if s.length <= 1 => true
+    case s =>
+      val (first, last) = (s.charAt(0), s.charAt(s.length - 1))
+      if (first != last) {
+        // remove either first or last
+        isPalindrome(s.substring(1)) || isPalindrome(
+          s.substring(0, s.length - 1)
+        )
+      } else {
+        validPalindrome(s.substring(1, s.length - 1))
+      }
+  }
+}
+
+println(f"validPalindrome('aba'): ${validPalindrome("aba")}")
+println(f"validPalindrome('abca'): ${validPalindrome("abca")}")
 
 // https://leetcode.com/problems/maximum-subarray/
 // classic kadane's algorithm: find the max subarray sum
@@ -198,4 +222,99 @@ def isValidSudoku(board: Array[Array[Char]]): Boolean = {
     .toArray
   // they are all 9 * 9 matrices.
   (rows ++ cols ++ boxes).forall(isValid)
+}
+
+// https://leetcode.com/problems/plus-one/
+// plus one to the number represented by an array of digits,
+// [1,2,9] -> [1,3,0]
+def plusOne(digits: Array[Int]): Array[Int] = {
+  val (carry, result): (Int, ListBuffer[Int]) =
+    // use foldLeft with initial tuple
+    digits.reverse.foldLeft((1, ListBuffer.empty[Int])) {
+      case ((carry, result), digit) =>
+        val newDigit = digit + carry
+        val newCarry = newDigit / 10
+        result.prepend(newDigit % 10)
+        (newCarry, result)
+    }
+  if (carry == 1) {
+    result.prepend(carry)
+  }
+  result.toArray
+}
+
+println(f"plusOne([1,2,9]): ${plusOne(Array(1, 2, 9)).mkString(", ")}")
+
+// https://leetcode.com/problems/add-binary/
+// add two binary strings "11" + "1" = "100"
+def addBinary(a: String, b: String): String = {
+  val (a1, b1) = (a.reverse, b.reverse)
+  // zipAll pads the shorter list with '0'
+  val (result, carry) =
+    (a1.zipAll(b1, '0', '0').foldLeft((ListBuffer.empty[Char], 0))) {
+      case ((result, carry), (x, y)) =>
+        val newCarry = (x.asDigit + y.asDigit + carry) / 2
+        val newDigit = (x.asDigit + y.asDigit + carry) % 2
+        (result.prepend(newDigit.toString.head), newCarry)
+    }
+  if (carry == 1) {
+    result.prepend('1')
+  }
+  result.mkString
+}
+
+println(f"addBinary('11', '1'): ${addBinary("11", "1")}")
+
+// https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/
+// find the first occurrence of a substring in a string
+def strStr(haystack: String, needle: String): Int = {
+  if (needle.isEmpty) {
+    return 0
+  }
+  haystack
+    // sliding window, step is default 1
+    .sliding(needle.length)
+    .zipWithIndex
+    .find({ case (s, _) => s == needle })
+    // _1 is the sliding string, _2 is the index
+    .map(_._2)
+    .getOrElse(-1)
+}
+
+// https://leetcode.com/problems/reverse-words-in-a-string/
+// reverse words in a string, separated by one spaces
+// if input string has multiple spaces between words, reduce them to one space
+def reverseWords(s: String): String = {
+  s.split(" ").filter(_.nonEmpty).reverse.mkString(" ")
+}
+
+println(
+  "reverseWords('  the sky is   blue'): " + reverseWords("  the sky is   blue")
+)
+
+// https://leetcode.com/problems/move-zeroes/
+// move zeros in an array to the end, in-place
+def moveZeroes(nums: Array[Int]): Unit = {
+  val (a, b) = nums.partition(_ != 0)
+  // this allocation of new arrays is cheating.
+  (a ++ b).copyToArray(nums)
+}
+
+val moveZeroesArr = Array(0, 1, 0, 3, 12)
+println(
+  f"moveZeroes(${moveZeroesArr.mkString(", ")}): ${moveZeroes(moveZeroesArr)} ${moveZeroesArr.mkString(", ")}"
+)
+
+// https://leetcode.com/problems/excel-sheet-column-title/
+// A->1, Z->26, AA->27, AB->28 ... 
+// given the number, return the column title
+def convertToTitle(n: Int): String = {
+  val (result, _) = (1 to n).foldLeft((ListBuffer.empty[Char], n)) {
+    case ((result, n), _) =>
+      val newChar = ('A' + (n - 1) % 26).toChar
+      val newN = (n - 1) / 26
+      result.prepend(newChar)
+      (result, newN)
+  }
+  result.mkString
 }
