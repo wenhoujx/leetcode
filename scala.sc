@@ -189,12 +189,13 @@ def isValidSudoku(board: Array[Array[Char]]): Boolean = {
   }
   val rows = board
   val cols = board.transpose
+  // partition the board into 3x3 boxes
+  // then flatten each box into a list
   val boxes = board
     .grouped(3)
     .flatMap(_.transpose.grouped(3))
     .map(_.flatten)
     .toArray
+  // they are all 9 * 9 matrices.
   (rows ++ cols ++ boxes).forall(isValid)
 }
-
-
