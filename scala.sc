@@ -98,23 +98,103 @@ println(f"isAnagram('anagram', 'nagaram'): ${isAnagram("anagram", "nagaram")}")
 // arr1, arr2 are sorted
 // m + n == arr1.length, arr1 starting from m is 0
 // arr1 has enough space to hold arr2
-// merge arr2 into arr1 sorted 
+// merge arr2 into arr1 sorted
 def merge(nums1: Array[Int], m: Int, nums2: Array[Int], n: Int): Unit = {
-    def helper(ns1: Array[Int], ns2: Array[Int]): Array[Int] =  {
-        (ns1.length, ns2.length) match {
-            case (0, 0) => Array()
-            case (0, _) => ns2
-            case (_, 0) => ns1
-            case (_, _) =>
-                if (ns1.head < ns2.head) {
-                    Array(ns1.head) ++ helper(ns1.tail, ns2)
-                } else {
-                    Array(ns2.head) ++ helper(ns1, ns2.tail)
-                }
+  def helper(ns1: Array[Int], ns2: Array[Int]): Array[Int] = {
+    (ns1.length, ns2.length) match {
+      case (0, 0) => Array()
+      case (0, _) => ns2
+      case (_, 0) => ns1
+      case (_, _) =>
+        if (ns1.head < ns2.head) {
+          Array(ns1.head) ++ helper(ns1.tail, ns2)
+        } else {
+          Array(ns2.head) ++ helper(ns1, ns2.tail)
         }
     }
-    helper(nums1.take(m), nums2).copyToArray(nums1)
+  }
+  helper(nums1.take(m), nums2).copyToArray(nums1)
 }
-var arr1 = Array(1,2,3,0,0,0)
-println(f"merge([1,2,3,0,0,0], 3, [2,5,6], 3): ${merge(arr1, 3, Array(2,5,6), 3)} ${arr1.mkString(", ")}" )
+var arr1 = Array(1, 2, 3, 0, 0, 0)
+println(
+  f"merge([1,2,3,0,0,0], 3, [2,5,6], 3): ${merge(arr1, 3, Array(2, 5, 6), 3)} ${arr1.mkString(", ")}"
+)
+
+// https://leetcode.com/problems/rotate-array/
+// rotate array to the right by k steps
+def rotate(nums: Array[Int], k: Int): Unit = {
+  val n = nums.length
+  val (left, right) = nums.splitAt(n - k % n)
+  (right ++ left).copyToArray(nums)
+}
+
+// https://leetcode.com/problems/longest-common-prefix/
+// given a list of strings, find the longest common prefix
+def longestCommonPrefix(strs: Array[String]): String = {
+  val minLength = strs.map(_.length).min
+  strs
+    .map(
+      _.toCharArray.take(minLength)
+    ) // take the first minLength chars from each string.
+    .transpose
+    .takeWhile(_.distinct.length == 1) // unique
+    .map(_.head) // get the first char from a list of same chars.
+    .mkString
+}
+
+println(
+  f"longestCommonPrefix(['flower', 'flow', 'flight']): ${longestCommonPrefix(Array("flower", "flow", "flight"))}"
+)
+
+// https://leetcode.com/problems/majority-element/
+// classic Boyer-Moore majority vote algorithm
+def majorityElement(nums: Array[Int]): Int = {
+  nums.tail
+    .foldLeft((nums.head, 1)) {
+      case ((_, 0), x) => (x, 1)
+      case ((y, count), x) => {
+        if (x == y) {
+          (y, count + 1)
+        } else {
+          (y, count - 1)
+        }
+      }
+
+    }
+    ._1
+}
+println(f"majorityElement([3,2,3]): ${majorityElement(Array(3, 2, 3))}")
+
+// https://leetcode.com/problems/best-time-to-buy-and-sell-stock/
+// find the max profit from a list of stock prices, one transaction only (buy then later sell)
+def maxProfit(prices: Array[Int]): Int = {
+  prices.tail
+    .foldLeft((prices.head, 0)) { case ((minPrice, maxProfit), price) =>
+      val newMinPrice = math.min(minPrice, price)
+      val newMaxProfit = math.max(maxProfit, price - minPrice)
+      (newMinPrice, newMaxProfit)
+    }
+    ._2
+}
+
+// https://leetcode.com/problems/valid-sudoku/
+// check if a sudoku board is valid
+// board is not filled, '.' is empty
+
+def isValidSudoku(board: Array[Array[Char]]): Boolean = {
+  val isValid = (xs: Array[Char]) => {
+    val filtered = xs.filter(_ != '.')
+    // non . cells are all unique
+    filtered.length == filtered.distinct.length
+  }
+  val rows = board
+  val cols = board.transpose
+  val boxes = board
+    .grouped(3)
+    .flatMap(_.transpose.grouped(3))
+    .map(_.flatten)
+    .toArray
+  (rows ++ cols ++ boxes).forall(isValid)
+}
+
 
