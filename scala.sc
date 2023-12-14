@@ -1,4 +1,5 @@
 import collection.mutable.ListBuffer
+import collection.mutable
 
 // https://leetcode.com/problems/reverse-linked-list/
 // reverse-linked-list
@@ -306,7 +307,7 @@ println(
 )
 
 // https://leetcode.com/problems/excel-sheet-column-title/
-// A->1, Z->26, AA->27, AB->28 ... 
+// A->1, Z->26, AA->27, AB->28 ...
 // given the number, return the column title
 def convertToTitle(n: Int): String = {
   val (result, _) = (1 to n).foldLeft((ListBuffer.empty[Char], n)) {
@@ -318,3 +319,87 @@ def convertToTitle(n: Int): String = {
   }
   result.mkString
 }
+
+// https://leetcode.com/problems/count-primes/
+// count the number of prime numbers less than a non-negative number, n
+def countPrimes(n: Int): Int = {
+  if (n <= 2) {
+    return 0
+  }
+  val isPrime = Array.fill(n)(true)
+  isPrime(0) = false
+  isPrime(1) = false
+  (2 until n).foreach { i =>
+    if (isPrime(i)) {
+      (i * i until n by i).foreach { j =>
+        // incr by j, they are all non prime
+        isPrime(j) = false
+      }
+    }
+  }
+  isPrime.count(identity)
+}
+
+// https://leetcode.com/problems/happy-number/
+// a happy number is defined by the following process:
+// starting with any positive integer, replace the number by the sum of the squares of its digits
+// repeat the process until the number equals 1 (where it will stay),
+// or it loops endlessly in a cycle which does not include 1
+def isHappy(n: Int): Boolean = {
+  def helper(n: Int, seen: Set[Int]): Boolean = {
+    if (n == 1) {
+      return true
+    }
+    if (seen.contains(n)) {
+      return false
+    }
+    val newSeen = seen + n
+    val newN = n.toString.map(_.asDigit).map(x => x * x).sum
+    helper(newN, newSeen)
+  }
+  helper(n, Set.empty[Int])
+}
+
+class TreeNode(
+    var value: Int = 0,
+    var left: TreeNode = null,
+    var right: TreeNode = null
+)
+
+// https://leetcode.com/problems/maximum-depth-of-binary-tree/
+// find the max depth of a binary tree
+def maxDepth(root: TreeNode): Int = {
+  if (root == null) {
+    return 0
+  }
+  1 + math.max(maxDepth(root.left), maxDepth(root.right))
+}
+
+// https://leetcode.com/problems/valid-parentheses/
+// check if a string of parentheses is valid, including (), [], {}
+def isValidParentheses(s: String): Boolean = {
+  val pairs = List("()", "[]", "{}").map(x => (x(1), x(0))).toMap
+  val stack = mutable.Stack.empty[Char]
+  util.control.Breaks.breakable {
+    for {
+      ch <- s
+    } yield ch match {
+      case '(' | '[' | '{' => stack.push(ch)
+      case ch => {
+        if (stack.isEmpty || stack.top != pairs(ch)) {
+          // make sure stack is not empty
+          stack.push(')')
+          // break early
+          util.control.Breaks.break()
+        } else {
+          stack.pop()
+        }
+      }
+    }
+
+  }
+  stack.isEmpty
+}
+
+println(f"isValidParentheses('()'): ${isValidParentheses("()")}")
+println(f"isValidParentheses('()[}]{}'): ${isValidParentheses("()[}]{}")}")
