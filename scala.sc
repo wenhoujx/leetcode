@@ -403,3 +403,32 @@ def isValidParentheses(s: String): Boolean = {
 
 println(f"isValidParentheses('()'): ${isValidParentheses("()")}")
 println(f"isValidParentheses('()[}]{}'): ${isValidParentheses("()[}]{}")}")
+
+// https://leetcode.com/problems/convert-sorted-array-to-binary-search-tree/description/
+// sorted array to balanced BST
+def sortedArrayToBST(nums: Array[Int]): TreeNode = {
+  if (nums.isEmpty) {
+    return null
+  }
+  val mid = nums.length / 2
+  val root = new TreeNode(nums(mid))
+  root.left = sortedArrayToBST(nums.take(mid))
+  root.right = sortedArrayToBST(nums.drop(mid + 1))
+  root
+}
+
+// https://leetcode.com/problems/remove-duplicates-from-sorted-list/description/
+// remove duplicates from a sorted linked list
+def deleteDuplicates(head: ListNode): ListNode = {
+  if (head == null || head.next == null) {
+    return head
+  }
+  if (head.x == head.next.x) {
+    // remove dup node.
+    head.next = head.next.next
+    deleteDuplicates(head)
+  } else {
+    head.next = deleteDuplicates(head.next)
+    head
+  }
+}
