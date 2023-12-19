@@ -216,11 +216,23 @@ trait Functor[F[_]] {
 
 `F[_]` type constructor and higher kinded type
 
+but you almost never write `functor.map(fa)(f)`, b/c there is a interface in Cats, which allows you to write `Option(1).map(???)`.
+
+```scala
+implicit class FunctorOps[F[_], A](src: F[A]) {
+  def map[B](func: A => B)
+      (implicit functor: Functor[F]): F[B] =
+    functor.map(src)(func)
+}
+```
+
+### type constructor
+
 `List` is a type constructor, given a type, produces a type, e.g. `List[Int]` is a type.
 
 Functions are value constructors, given a value, produces a value, e.g. `Int => Int` is a value.
 
-Declare type constructor with `[_]`, e.g. `trait Functor[F[_]]`.
+Declare type constructor with `[_]`, e.g. `trait Functor[F[_]]`, we say functor accepts a type constructor `F` that takes one type parameter.
 
 Functor has `lift` method:
 
@@ -297,6 +309,43 @@ Monoid[Symbol].empty
 Symbol("a") |+| Symbol("few") |+| Symbol("words")
 
 ```
+
+## monads
+
+`for` comprehension is syntactic sugar for `flatMap` and `map`:
+
+```scala
+def stringDivideBy(aStr: String, bStr: String): Option[Int] =
+  for {
+    aNum <- parseInt(aStr) // return Option
+    bNum <- parseInt(bStr) // return Option 
+    ans  <- divide(aNum, bNum) // return Option
+  } yield ans // Option 
+```
+
+same for `list`, `future`.
+
+Scala definition.
+
+```scala
+trait Monad[F[_]] {
+  def pure[A](value: A): F[A]
+
+  def flatMap[A, B](value: F[A])(func: A => F[B]): F[B]
+}
+
+// monads law: 
+// left identity: func: A => F[B]
+pure(a).flatMap(func) == func(a)
+// right identity:
+m.flatMap(pure) == m
+// associativity:
+m.flatMap(f).flatMap(g) == m.flatMap(x => f(x).flatMap(g))
+```
+
+monads are functors.
+
+
 
 ## misc
 
