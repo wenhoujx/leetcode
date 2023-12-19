@@ -156,3 +156,148 @@ In the example above, you can use `fa` as a `fb` b/c `fa` can take any `Animal` 
 
 ## monoids and semigroups
 
+They describe a single operation on a type, not the type itself. e.g. int addition forms a monoid, but int subtraction does not b/c it violates the identity and  associative law.
+
+In scala, a monoid for a type `A` is:
+
+```scala
+trait Monoid[A] {
+    def combine(x: A, y: A): A
+    def empty: A
+}
+
+// and satisfy the following laws:
+// associativity
+def associativeLaw[A](x: A, y: A, z: A)(implicit m: Monoid[A]): Boolean = 
+    m.combine(x, m.combine(y, z)) == m.combine(m.combine(x, y), z)
+// idenetity 
+def identityLaw[A](x: A)(implicit m: Monoid[A]): Boolean = 
+    (m.combine(x, m.empty) == x) && (m.combine(m.empty, x) == x)
+
+```
+
+semi-group is a monoid without the `empty` method. e.g. positive int addition forms a semi-group.
+
+```scala
+trait Semigroup[A] {
+    def combine(x: A, y: A): A
+}
+
+// and follow the associative law
+def associativeLaw[A](x: A, y: A, z: A)(implicit m: Semigroup[A]): Boolean = 
+    m.combine(x, m.combine(y, z)) == m.combine(m.combine(x, y), z)
+```
+
+In cats:
+
+```scala
+import cats.Monoid
+import cats.Semigroup
+import cats.syntax.semigroup._ // for |+|
+import cats.instances.string._ 
+
+val stringResult = Monoid[String].combine("Hi ", "there")
+// or 
+val stringResult = "Hi " |+| "there" // |+| is the alias for combine
+
+```
+
+commutative replicated data types (CRDTs), Monoids in distributive systems and big data map reduce, woah.
+
+## fuctors
+
+`List`, `Option`, `Either`, `Future`, `fucntion`, anything can be `map`ped.
+
+```scala
+trait Functor[F[_]] {
+    def map[A, B](fa: F[A])(f: A => B): F[B]
+}
+```
+
+`F[_]` type constructor and higher kinded type
+
+`List` is a type constructor, given a type, produces a type, e.g. `List[Int]` is a type.
+
+Functions are value constructors, given a value, produces a value, e.g. `Int => Int` is a value.
+
+Declare type constructor with `[_]`, e.g. `trait Functor[F[_]]`.
+
+Functor has `lift` method:
+
+```scala
+def lift[A, B](f: A => B): F[A] => F[B] = fa => map(fa)(f)
+```
+
+declare a method that operates on functor, note the implicit functor serves as a constraint:
+
+```scala
+def doMath[F[_]](start: F[Int])
+    (implicit functor: Functor[F]): F[Int] =
+  start.map(n => n + 1 * 2)
+
+import cats.instances.option._ // for Functor
+import cats.instances.list._   // for Functor
+
+doMath(Option(20)) // Some(22)
+doMath(List(1, 2, 3))
+
+```
+
+The following is the map implementation for `map`.
+
+```scala
+implicit class FunctorOps[F[_], A](src: F[A]) {
+  def map[B](func: A => B)
+      (implicit functor: Functor[F]): F[B] =
+    functor.map(src)(func)
+}
+```
+
+The more interesting thing is it tells us how to define a functor, by providing the `map` method, e.g. for `Option`:
+
+```scala
+implicit val optionFunctor: Functor[Option] =
+  new Functor[Option] {
+    def map[A, B](value: Option[A])(func: A => B): Option[B] =
+      value.map(func)
+  }
+```
+
+`contramap`, take a function, prepend it to `map` operation. Only applicable to a transformation, e.g. `Printable[A] A => String`, not a container, e.g. `List[A]`. These functors are called `contravariant functors`.
+
+This contramap process can be viewed as lifting a function `A => B` to a function `F[B] => F[A]`, hence the name.
+
+```scala
+trait ContravariantFunctor[F[_]] {
+  def contramap[A, B](fa: F[A])(f: B => A): F[B]
+}
+```
+
+## misc
+
+### why scala allow () for apply and ignore paren entirely?
+
+I used to think ignore paren, and implicit apply was inconsistent, but it's quite nice to write  `Monoid[Int].combine(1, 2)` instead of of `Monoid.apply[Int]()(1,2)`.
+
+### implement memoization
+
+```scala
+def memoize[A, B](f: A => B): A => B = new scala.collection.mutable.HashMap[A, B]() {
+    override def apply(key: A): B = getOrElseUpdate(key, f(key))
+}
+```
+
+- function signature is obvious, what's interesting is HashMap is a function via `apply`. the `map(key)` is not just a syntactic sugar for `map.apply(key)`, it's actually a method call.
+- the code creates an instance of subclass of HashMap, and override the `apply` method. Same in java.
+
+### define recursive function as a val or var
+
+Use `lazy` keyword, so it's not evaluated until it's called.
+
+```scala
+lazy val f: ((Int,Int)) => Int = memoize {
+    case (1, n) => 1 
+    case (m,1) => 1 
+    case (m,n) => f(m, n-1) + f(m-1, n)
+}
+```
