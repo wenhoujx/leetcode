@@ -263,6 +263,8 @@ implicit val optionFunctor: Functor[Option] =
   }
 ```
 
+### contramap
+
 `contramap`, take a function, prepend it to `map` operation. Only applicable to a transformation, e.g. `Printable[A] A => String`, not a container, e.g. `List[A]`. These functors are called `contravariant functors`.
 
 This contramap process can be viewed as lifting a function `A => B` to a function `F[B] => F[A]`, hence the name.
@@ -271,6 +273,29 @@ This contramap process can be viewed as lifting a function `A => B` to a functio
 trait ContravariantFunctor[F[_]] {
   def contramap[A, B](fa: F[A])(f: B => A): F[B]
 }
+```
+
+### imap
+
+`imap` is a combination of `map` and `contramap`, it's a functor that can transform both input and output.
+
+we know `String` is a monoid, we can use imap to make a class `Symbol` monoid as well:
+
+```scala
+import cats.Monoid
+import cats.instances.string._ // for Monoid
+import cats.syntax.invariant._ // for imap
+import cats.syntax.semigroup._ // for |+|
+
+implicit val symbolMonoid: Monoid[Symbol] =
+  Monoid[String]
+    .imap(Symbol.apply) // string => symbol
+      (_.name) // symbol => string
+
+Monoid[Symbol].empty
+
+Symbol("a") |+| Symbol("few") |+| Symbol("words")
+
 ```
 
 ## misc
